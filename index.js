@@ -62,13 +62,28 @@ const decoders = {
   }
 };
 
-function fromTree(element, definition, customDecoders) {
+const encoders = {
+  'NULL': (value) => value ? Buffer.from([]) : null,
+  'INTEGER': (value) => {
+    const length = Math.log2(value) >> 3;
+    const buffer = Buffer.allocUnsafe(length);
+    buffer.writeUIntBE(value, length);
+    return buffer;
+  },
+  'ENUMERATED': (value, definition) => {
+    const item = definition.values.find((item) => value === item.name);
+    return Buffer.from([ item.value ]);
+  }
+}
+
+function fromTree(element, definition) {
   const isDefinitionUniversal = isNaN(definition.tag);
   const definitionTag = isDefinitionUniversal
     ? universalTagMap[definition.type]
     : definition.tag;
   const isDefinitionConstructed = constructedTypeMap[definition.type] === 1;
 
+  // @todo resolve to type?
   const isElementUniversal = element.cls === CLS_UNIVERSAL;
   const isElementConstructed = element.form === FORM_CONSTRUCTED;
 
@@ -86,9 +101,7 @@ function fromTree(element, definition, customDecoders) {
 
   let match = null;
 
-  if (element.form === FORM_PRIMITIVE) {
-    match = element.value;
-  } else {
+  if (isDefinitionConstructed) {
     const definitions = definition.elements;
     let definitionIdx = 0;
 
@@ -99,14 +112,12 @@ function fromTree(element, definition, customDecoders) {
         let childDefinition = null;
         let match = null;
 
-        // @todo check optional flag
-
         while (match === null && definitionIdx < definitions.length) {
           childDefinition = definitions[definitionIdx++];
-          match = fromTree(child, childDefinition, customDecoders);
+          match = fromTree(child, childDefinition);
 
           if (match === null && !childDefinition.optional) {
-            throw new Error('Unmatchd mandatory element');
+            throw new Error('Unmatched mandatory element');
           }
         }
 
@@ -118,13 +129,61 @@ function fromTree(element, definition, customDecoders) {
       });
 
     match = constructed;
+  } else {
+    match = element.value;
   }
 
-  const decoderName = definition.decodeAs || definition.type;
-  const decoder = decoders[decoderName] || customDecoders && customDecoders[decoderName];
+  const decoder = decoders[definition.type];
+
   return decoder ? decoder(match, definition) : match;
 }
 
+function toTree(value, definition) {
+  const isDefinitionUniversal = isNaN(definition.tag);
+  const definitionTag = isDefinitionUniversal
+    ? universalTagMap[definition.type]
+    : definition.tag;
+  const isDefinitionConstructed = constructedTypeMap[definition.type] === 1;
+
+  if (isDefinitionConstructed) {
+    if (!(value instanceof Object)) {
+      throw new Error('Value must be an object');
+    }
+
+    const elements = definition.elements
+      .filter((childDefinition) => value.hasOwnProperty(childDefinition.name))
+      .map((childDefinition) => toTree(value[childDefinition.name], childDefinition))
+      .filter((element) => element.value !== null);
+
+    return {
+      cls: isDefinitionUniversal ? CLS_UNIVERSAL : CLS_CONTEXT_SPECIFIC,
+      form: FORM_CONSTRUCTED,
+      tagCode: definitionTag,
+      elements
+    };
+  } else {
+    const encoder = encoders[definition.type];
+
+    return {
+      cls: isDefinitionUniversal ? CLS_UNIVERSAL : CLS_CONTEXT_SPECIFIC,
+      form: FORM_PRIMITIVE,
+      tagCode: definitionTag,
+      value: encoder ? encoder(value, definition) : value
+    };
+  }
+
+  const encoderName = /*definition.encodeAs || */definition.type;
+  const encoder = encoders[encoderName] || customEncoders && customEncoders[encoderName];
+
+  return {
+    cls: isDefinitionUniversal ? CLS_UNIVERSAL : CLS_CONTEXT_SPECIFIC,
+    form: isDefinitionConstructed ? FORM_CONSTRUCTED : FORM_PRIMITIVE,
+    tagCode: definitionTag,
+    value: encoder ? encoder(match, definition) : match
+  };
+}
+
 module.exports = Object.freeze({
-  fromTree
+  fromTree,
+  toTree
 });

@@ -124,3 +124,116 @@ test('fromTree: universal constructed: tagged primitives', (t) => {
 
   t.deepEqual(asn1Mapper.fromTree(tree, definition), mapped);
 });
+
+test('toTree: universal primitive', (t) => {
+  const mapped = Buffer.from([ 1, 2, 3 ]);
+  const definition = {
+    type: 'OCTET STRING'
+  };
+  const tree = {
+    cls: CLS_UNIVERSAL,
+    form: FORM_PRIMITIVE,
+    tagCode: TAG_OCTET_STRING,
+    value: Buffer.from([ 1, 2, 3 ])
+  };
+
+  t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
+});
+
+test('toTree: context-specific primitive', (t) => {
+  const mapped = Buffer.from([ 1, 2, 3 ]);
+  const definition = {
+    type: 'OCTET STRING',
+    tag: 0
+  };
+  const tree = {
+    cls: CLS_CONTEXT_SPECIFIC,
+    form: FORM_PRIMITIVE,
+    tagCode: 0,
+    value: Buffer.from([ 1, 2, 3 ])
+  };
+
+  t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
+});
+
+test('toTree: universal constructed: single primitive', (t) => {
+  const mapped = {
+    foo: Buffer.from([ 1, 2, 3 ])
+  };
+  const definition = {
+    type: 'SEQUENCE',
+    elements: [{
+      name: 'foo',
+      type: 'OCTET STRING',
+    }]
+  };
+  const tree = {
+    cls: CLS_UNIVERSAL,
+    form: FORM_CONSTRUCTED,
+    tagCode: TAG_SEQUENCE,
+    elements: [{
+      cls: CLS_UNIVERSAL,
+      form: FORM_PRIMITIVE,
+      tagCode: TAG_OCTET_STRING,
+      value: Buffer.from([ 1, 2, 3 ])
+    }]
+  };
+
+  t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
+});
+
+test('fromTree: universal constructed: tagged primitives', (t) => {
+  const mapped = {
+    foo: Buffer.from([ 1, 2, 3 ]),
+    bar: Buffer.from([ 2, 3, 4 ]),
+    qux: Buffer.from([ 4, 5, 6 ])
+  };
+  const definition = {
+    type: 'SEQUENCE',
+    elements: [{
+      name: 'foo',
+      type: 'OCTET STRING',
+    }, {
+      name: 'bar',
+      type: 'OCTET STRING',
+      tag: 0,
+      implicit: true,
+      optional: true
+    }, {
+      name: 'baz',
+      type: 'OCTET STRING',
+      tag: 1,
+      implicit: true,
+      optional: true
+    }, {
+      name: 'qux',
+      type: 'OCTET STRING',
+      tag: 2,
+      implicit: true,
+      optional: true
+    }]
+  };
+  const tree = {
+    cls: CLS_UNIVERSAL,
+    form: FORM_CONSTRUCTED,
+    tagCode: TAG_SEQUENCE,
+    elements: [{
+      cls: CLS_UNIVERSAL,
+      form: FORM_PRIMITIVE,
+      tagCode: TAG_OCTET_STRING,
+      value: Buffer.from([ 1, 2, 3 ])
+    }, {
+      cls: CLS_CONTEXT_SPECIFIC,
+      form: FORM_PRIMITIVE,
+      tagCode: 0,
+      value: Buffer.from([ 2, 3, 4 ])
+    }, {
+      cls: CLS_CONTEXT_SPECIFIC,
+      form: FORM_PRIMITIVE,
+      tagCode: 2,
+      value: Buffer.from([ 4, 5, 6 ])
+    }]
+  };
+
+  t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
+});
