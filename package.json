@@ -1,0 +1,25 @@
+{
+  "name": "asn1-mapper",
+  "version": "0.0.0",
+  "description": "ASN.1 module mapper",
+  "main": "index.js",
+  "scripts": {
+    "test": "ava"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/atesgoral/node-asn1-mapper.git"
+  },
+  "keywords": [
+    "asn1"
+  ],
+  "author": "Ates Goral <ates@magnetiq.com> (http://magnetiq.com/)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/atesgoral/node-asn1-mapper/issues"
+  },
+  "homepage": "https://github.com/atesgoral/node-asn1-mapper#readme",
+  "devDependencies": {
+    "ava": "^0.22.0"
+  }
+}
