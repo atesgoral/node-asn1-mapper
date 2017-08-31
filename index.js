@@ -171,16 +171,6 @@ function toTree(value, definition) {
       value: encoder ? encoder(value, definition) : value
     };
   }
-
-  const encoderName = /*definition.encodeAs || */definition.type;
-  const encoder = encoders[encoderName] || customEncoders && customEncoders[encoderName];
-
-  return {
-    cls: isDefinitionUniversal ? CLS_UNIVERSAL : CLS_CONTEXT_SPECIFIC,
-    form: isDefinitionConstructed ? FORM_CONSTRUCTED : FORM_PRIMITIVE,
-    tagCode: definitionTag,
-    value: encoder ? encoder(match, definition) : match
-  };
 }
 
 module.exports = Object.freeze({
