@@ -65,9 +65,9 @@ const decoders = {
 const encoders = {
   'NULL': (value) => value ? Buffer.from([]) : null,
   'INTEGER': (value) => {
-    const length = Math.log2(value) >> 3;
+    const length = (Math.log2(value) >> 3) + 1;
     const buffer = Buffer.allocUnsafe(length);
-    buffer.writeUIntBE(value, length);
+    buffer.writeUIntBE(value, 0, length);
     return buffer;
   },
   'ENUMERATED': (value, definition) => {
