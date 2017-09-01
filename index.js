@@ -51,10 +51,10 @@ const constructedTypeMap = {
 };
 
 const decoders = {
-  'NULL': () => true,
   'INTEGER': (value) => {
     return value.readIntBE(0, value.length);
   },
+  'NULL': () => true,
   'ENUMERATED': (value, definition) => {
     const itemValue = value.readIntBE(0, value.length);
     const item = definition.values.find((item) => itemValue === item.value);
@@ -63,13 +63,13 @@ const decoders = {
 };
 
 const encoders = {
-  'NULL': (value) => value ? Buffer.from([]) : null,
   'INTEGER': (value) => {
     const length = (Math.log2(value) >> 3) + 1;
     const buffer = Buffer.allocUnsafe(length);
     buffer.writeUIntBE(value, 0, length);
     return buffer;
   },
+  'NULL': (value) => value ? Buffer.from([]) : null,
   'ENUMERATED': (value, definition) => {
     const item = definition.values.find((item) => value === item.name);
     return Buffer.from([ item.value ]);
@@ -102,33 +102,48 @@ function fromTree(element, definition) {
   let match = null;
 
   if (isDefinitionConstructed) {
-    const definitions = definition.elements;
-    let definitionIdx = 0;
+    const ofElement = definition.ofElement;
 
-    const constructed = {};
+    if (ofElement) {
+      match = element.elements
+        .map((child) => {
+          const match = fromTree(child, ofElement);
 
-    element.elements
-      .forEach((child, idx) => {
-        let childDefinition = null;
-        let match = null;
-
-        while (match === null && definitionIdx < definitions.length) {
-          childDefinition = definitions[definitionIdx++];
-          match = fromTree(child, childDefinition);
-
-          if (match === null && !childDefinition.optional) {
-            throw new Error('Unmatched mandatory element');
+          if (match === null) {
+            throw new Error('Unmatched element');
           }
-        }
 
-        if (match === null) {
-          throw new Error('Element not matched');
-        }
+          return match;
+        });
+    } else {
+      const definitions = definition.elements;
+      let definitionIdx = 0;
 
-        constructed[childDefinition.name] = match;
-      });
+      const constructed = {};
 
-    match = constructed;
+      element.elements
+        .forEach((child, idx) => {
+          let childDefinition = null;
+          let match = null;
+
+          while (match === null && definitionIdx < definitions.length) {
+            childDefinition = definitions[definitionIdx++];
+            match = fromTree(child, childDefinition);
+
+            if (match === null && !childDefinition.optional) {
+              throw new Error('Unmatched mandatory element');
+            }
+          }
+
+          if (match === null) {
+            throw new Error('Element not matched');
+          }
+
+          constructed[childDefinition.name] = match;
+        });
+
+      match = constructed;
+    }
   } else {
     match = element.value;
   }
