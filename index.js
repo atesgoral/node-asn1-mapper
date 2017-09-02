@@ -153,7 +153,7 @@ function fromTree(element, definition) {
   return decoder ? decoder(match, definition) : match;
 }
 
-function toTree(value, definition) {
+function toTree(value, definition) { // @todo optional third arg: throw exception on no match instead of returning null?
   const isDefinitionUniversal = isNaN(definition.tag);
   const definitionTag = isDefinitionUniversal
     ? universalTagMap[definition.type]
@@ -161,21 +161,34 @@ function toTree(value, definition) {
   const isDefinitionConstructed = constructedTypeMap[definition.type] === 1;
 
   if (isDefinitionConstructed) {
-    if (!(value instanceof Object)) {
-      throw new Error('Value must be an object');
+    const ofElement = definition.ofElement;
+
+    if (ofElement) {
+      if (!(value instanceof Array)) {
+        throw new Error('Value must be an array');
+      }
+
+      return {
+        cls: isDefinitionUniversal ? CLS_UNIVERSAL : CLS_CONTEXT_SPECIFIC,
+        form: FORM_CONSTRUCTED,
+        tagCode: definitionTag,
+        elements: value.map((item) => toTree(item, ofElement)) // @todo throw exception if any items are null
+      };
+    } else {
+      if (!(value instanceof Object)) {
+        throw new Error('Value must be an object');
+      }
+      return {
+        cls: isDefinitionUniversal ? CLS_UNIVERSAL : CLS_CONTEXT_SPECIFIC,
+        form: FORM_CONSTRUCTED,
+        tagCode: definitionTag,
+        elements: definition.elements
+          // @todo check optional flag? (i.e. otherwise need to be aware of CHOICE)
+          .filter((childDefinition) => value.hasOwnProperty(childDefinition.name)) // @todo how can they not have names?
+          .map((childDefinition) => toTree(value[childDefinition.name], childDefinition))
+          .filter((element) => element.value !== null)
+      };
     }
-
-    const elements = definition.elements
-      .filter((childDefinition) => value.hasOwnProperty(childDefinition.name))
-      .map((childDefinition) => toTree(value[childDefinition.name], childDefinition))
-      .filter((element) => element.value !== null);
-
-    return {
-      cls: isDefinitionUniversal ? CLS_UNIVERSAL : CLS_CONTEXT_SPECIFIC,
-      form: FORM_CONSTRUCTED,
-      tagCode: definitionTag,
-      elements
-    };
   } else {
     const encoder = encoders[definition.type];
 
