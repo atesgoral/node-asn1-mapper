@@ -1,6 +1,6 @@
 {
   "name": "asn1-mapper",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "ASN.1 module mapper",
   "main": "index.js",
   "scripts": {
