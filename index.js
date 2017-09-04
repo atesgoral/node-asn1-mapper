@@ -77,6 +77,22 @@ const encoders = {
 }
 
 function fromTree(element, definition) {
+  let match = null;
+
+  if (definition.type === 'CHOICE') {
+    let choices = definition.elements; // @todo rename to choices
+
+    for (let choiceIdx = 0; choiceIdx < choices.length; choiceIdx++) {
+      match = fromTree(element, choices[choiceIdx]);
+
+      if (match !== null) {
+        return match;
+      }
+    }
+
+    return null;
+  }
+
   const isDefinitionUniversal = isNaN(definition.tag);
   const definitionTag = isDefinitionUniversal
     ? universalTagMap[definition.type]
@@ -98,8 +114,6 @@ function fromTree(element, definition) {
   if (definitionTag !== element.tagCode) {
     return null;
   }
-
-  let match = null;
 
   if (isDefinitionConstructed) {
     const ofElement = definition.ofElement;
@@ -154,6 +168,21 @@ function fromTree(element, definition) {
 }
 
 function toTree(value, definition) { // @todo optional third arg: throw exception on no match instead of returning null?
+  if (definition.type === 'CHOICE') {
+    let choices = definition.elements; // @todo rename to choices
+    let element = null;
+
+    for (let choiceIdx = 0; choiceIdx < choices.length; choiceIdx++) {
+      element = toTree(value, choices[choiceIdx]);
+
+      if (element !== null) {
+        return element;
+      }
+    }
+
+    throw new Error('Choice not matched');
+  }
+
   const isDefinitionUniversal = isNaN(definition.tag);
   const definitionTag = isDefinitionUniversal
     ? universalTagMap[definition.type]

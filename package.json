@@ -4,7 +4,8 @@
   "description": "ASN.1 module mapper",
   "main": "index.js",
   "scripts": {
-    "test": "ava"
+    "test": "ava",
+    "coverage": "nyc ava && nyc report --reporter=html"
   },
   "repository": {
     "type": "git",
@@ -20,6 +21,7 @@
   },
   "homepage": "https://github.com/atesgoral/node-asn1-mapper#readme",
   "devDependencies": {
-    "ava": "^0.22.0"
+    "ava": "^0.22.0",
+    "nyc": "^11.1.0"
   }
 }
