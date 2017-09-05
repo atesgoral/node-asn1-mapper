@@ -76,6 +76,15 @@ const encoders = {
   }
 }
 
+class TaggedBuffer {
+  constructor(buffer, tag) {
+    this.buffer = buffer;
+    this.tag = typeof tag === 'string'
+      ? universalTagMap[tag]
+      : tag;
+  }
+}
+
 function fromTree(element, definition) {
   let match = null;
 
@@ -130,7 +139,7 @@ function fromTree(element, definition) {
           return match;
         });
     } else {
-      const definitions = definition.elements;
+      const definitions = definition.elements; // @todo assert elements.length !== 0?
       let definitionIdx = 0;
 
       const constructed = {};
@@ -147,10 +156,6 @@ function fromTree(element, definition) {
             if (match === null && !childDefinition.optional) {
               throw new Error('Unmatched mandatory element');
             }
-          }
-
-          if (match === null) {
-            throw new Error('Element not matched');
           }
 
           constructed[childDefinition.name] = match;
@@ -219,18 +224,33 @@ function toTree(value, definition) { // @todo optional third arg: throw exceptio
       };
     }
   } else {
+    let buffer = value;
+
+    if (value instanceof TaggedBuffer) {
+      if (value.tag !== definitionTag) {
+        return null;
+      }
+
+      buffer = value.buffer;
+    }
+
     const encoder = encoders[definition.type];
 
     return {
       cls: isDefinitionUniversal ? CLS_UNIVERSAL : CLS_CONTEXT_SPECIFIC,
       form: FORM_PRIMITIVE,
       tagCode: definitionTag,
-      value: encoder ? encoder(value, definition) : value
+      value: encoder ? encoder(buffer, definition) : buffer
     };
   }
 }
 
+function tag(buffer, tag) {
+  return new TaggedBuffer(buffer, tag);
+}
+
 module.exports = Object.freeze({
   fromTree,
-  toTree
+  toTree,
+  tag
 });

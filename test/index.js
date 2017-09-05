@@ -92,7 +92,7 @@ test('fromTree: context-specific primitive', (t) => {
   t.deepEqual(asn1Mapper.fromTree(tree, definition), mapped);
 });
 
-test('fromFree: primitive decoding: INTEGER', (t) => {
+test('fromFree: decoding INTEGER', (t) => {
   const tree = {
     cls: CLS_UNIVERSAL,
     form: FORM_PRIMITIVE,
@@ -107,7 +107,7 @@ test('fromFree: primitive decoding: INTEGER', (t) => {
   t.is(asn1Mapper.fromTree(tree, definition), mapped);
 });
 
-test('fromFree: primitive decoding: NULL', (t) => {
+test('fromFree: decoding NULL', (t) => {
   const tree = {
     cls: CLS_UNIVERSAL,
     form: FORM_PRIMITIVE,
@@ -122,7 +122,7 @@ test('fromFree: primitive decoding: NULL', (t) => {
   t.is(asn1Mapper.fromTree(tree, definition), mapped);
 });
 
-test('fromFree: primitive decoding: ENUMERATED', (t) => {
+test('fromFree: decoding ENUMERATED', (t) => {
   const tree = {
     cls: CLS_UNIVERSAL,
     form: FORM_PRIMITIVE,
@@ -141,7 +141,7 @@ test('fromFree: primitive decoding: ENUMERATED', (t) => {
   t.is(asn1Mapper.fromTree(tree, definition), mapped);
 });
 
-test('fromFree: primitive decoding: ENUMERATED with unmatched value', (t) => {
+test('fromFree: decoding ENUMERATED with unmatched value', (t) => {
   const tree = {
     cls: CLS_UNIVERSAL,
     form: FORM_PRIMITIVE,
@@ -160,7 +160,7 @@ test('fromFree: primitive decoding: ENUMERATED with unmatched value', (t) => {
   t.is(asn1Mapper.fromTree(tree, definition), mapped);
 });
 
-test('fromTree: universal constructed: single primitive', (t) => {
+test('fromTree: SEQUENCE with single primitive', (t) => {
   const tree = {
     cls: CLS_UNIVERSAL,
     form: FORM_CONSTRUCTED,
@@ -186,7 +186,7 @@ test('fromTree: universal constructed: single primitive', (t) => {
   t.deepEqual(asn1Mapper.fromTree(tree, definition), mapped);
 });
 
-test('fromTree: universal constructed: tagged primitives', (t) => {
+test('fromTree: SEQUENCE with tagged primitives', (t) => {
   const tree = {
     cls: CLS_UNIVERSAL,
     form: FORM_CONSTRUCTED,
@@ -242,43 +242,76 @@ test('fromTree: universal constructed: tagged primitives', (t) => {
   t.deepEqual(asn1Mapper.fromTree(tree, definition), mapped);
 });
 
-test('fromTree: CHOICE with universal tags, second choice matches', (t) => {
+test('fromTree: SEQUENCE with unmatched optional element', (t) => {
   const tree = {
     cls: CLS_UNIVERSAL,
-    form: FORM_PRIMITIVE,
-    tagCode: TAG_OCTET_STRING,
-    value: Buffer.from([ 1, 2, 3 ])
-  };
-  const definition = {
-    type: 'CHOICE',
+    form: FORM_CONSTRUCTED,
+    tagCode: TAG_SEQUENCE,
     elements: [{
-      type: 'INTEGER',
+      cls: CLS_UNIVERSAL,
+      form: FORM_PRIMITIVE,
+      tagCode: TAG_OCTET_STRING,
+      value: Buffer.from([ 1, 2, 3 ])
     }, {
-      type: 'OCTET STRING'
+      cls: CLS_UNIVERSAL,
+      form: FORM_PRIMITIVE,
+      tagCode: TAG_INTEGER,
+      value: Buffer.from([ 1 ])
     }]
   };
-  const mapped = Buffer.from([ 1, 2, 3 ]);
+  const definition = {
+    type: 'SEQUENCE',
+    elements: [{
+      name: 'foo',
+      type: 'OCTET STRING',
+    }, {
+      name: 'bar',
+      type: 'OCTET STRING',
+      optional: true
+    }, {
+      name: 'baz',
+      type: 'INTEGER'
+    }]
+  };
+  const mapped = {
+    foo: Buffer.from([ 1, 2, 3 ]),
+    baz: 1
+  };
 
   t.deepEqual(asn1Mapper.fromTree(tree, definition), mapped);
 });
 
-test('fromTree: CHOICE with universal tags, no choice matches', (t) => {
+test('fromTree: SEQUENCE with unmatched mandatory element', (t) => {
   const tree = {
     cls: CLS_UNIVERSAL,
-    form: FORM_PRIMITIVE,
-    tagCode: TAG_NULL,
-    value: Buffer.from([])
+    form: FORM_CONSTRUCTED,
+    tagCode: TAG_SEQUENCE,
+    elements: [{
+      cls: CLS_UNIVERSAL,
+      form: FORM_PRIMITIVE,
+      tagCode: TAG_OCTET_STRING,
+      value: Buffer.from([ 1, 2, 3 ])
+    }, {
+      cls: CLS_UNIVERSAL,
+      form: FORM_PRIMITIVE,
+      tagCode: TAG_INTEGER,
+      value: Buffer.from([ 1 ])
+    }]
   };
   const definition = {
-    type: 'CHOICE',
+    type: 'SEQUENCE',
     elements: [{
-      type: 'INTEGER',
+      name: 'foo',
+      type: 'OCTET STRING',
     }, {
+      name: 'bar',
       type: 'OCTET STRING'
     }]
   };
 
-  t.is(asn1Mapper.fromTree(tree, definition), null);
+  t.throws(() => {
+    asn1Mapper.fromTree(tree, definition);
+  });
 });
 
 test('fromTree: SEQUENCE OF', (t) => {
@@ -341,6 +374,45 @@ test('fromTree: SEQUENCE OF with unmatched element', (t) => {
   });
 });
 
+test('fromTree: CHOICE where second choice matches', (t) => {
+  const tree = {
+    cls: CLS_UNIVERSAL,
+    form: FORM_PRIMITIVE,
+    tagCode: TAG_OCTET_STRING,
+    value: Buffer.from([ 1, 2, 3 ])
+  };
+  const definition = {
+    type: 'CHOICE',
+    elements: [{
+      type: 'INTEGER',
+    }, {
+      type: 'OCTET STRING'
+    }]
+  };
+  const mapped = Buffer.from([ 1, 2, 3 ]);
+
+  t.deepEqual(asn1Mapper.fromTree(tree, definition), mapped);
+});
+
+test('fromTree: CHOICE where no choices match', (t) => {
+  const tree = {
+    cls: CLS_UNIVERSAL,
+    form: FORM_PRIMITIVE,
+    tagCode: TAG_NULL,
+    value: Buffer.from([])
+  };
+  const definition = {
+    type: 'CHOICE',
+    elements: [{
+      type: 'INTEGER',
+    }, {
+      type: 'OCTET STRING'
+    }]
+  };
+
+  t.is(asn1Mapper.fromTree(tree, definition), null);
+});
+
 test('toTree: universal primitive', (t) => {
   const mapped = Buffer.from([ 1, 2, 3 ]);
   const definition = {
@@ -356,7 +428,7 @@ test('toTree: universal primitive', (t) => {
   t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
 });
 
-test('toTree: primitive encoding: INTEGER', (t) => {
+test('toTree: encoding INTEGER', (t) => {
   const mapped = 0x1234;
   const definition = {
     type: 'INTEGER'
@@ -371,7 +443,7 @@ test('toTree: primitive encoding: INTEGER', (t) => {
   t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
 });
 
-test('toTree: primitive encoding: NULL', (t) => {
+test('toTree: encoding NULL', (t) => {
   const mapped = true;
   const definition = {
     type: 'NULL'
@@ -388,7 +460,7 @@ test('toTree: primitive encoding: NULL', (t) => {
   t.is(JSON.stringify(asn1Mapper.toTree(mapped, definition)), JSON.stringify(tree));
 });
 
-test('toTree: primitive encoding: NULL with non-truthy value', (t) => {
+test('toTree: encoding NULL with non-truthy value', (t) => {
   const mapped = false;
   const definition = {
     type: 'NULL'
@@ -403,7 +475,7 @@ test('toTree: primitive encoding: NULL with non-truthy value', (t) => {
   t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
 });
 
-test('toTree: primitive encoding: ENUMERATED', (t) => {
+test('toTree: encoding ENUMERATED', (t) => {
   const mapped = 'two';
   const definition = {
     type: 'ENUMERATED',
@@ -438,7 +510,7 @@ test('toTree: context-specific primitive', (t) => {
   t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
 });
 
-test('toTree: universal constructed: single primitive', (t) => {
+test('toTree: SEQUENCE with single primitive', (t) => {
   const mapped = {
     foo: Buffer.from([ 1, 2, 3 ])
   };
@@ -464,7 +536,7 @@ test('toTree: universal constructed: single primitive', (t) => {
   t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
 });
 
-test('fromTree: universal constructed: tagged primitives', (t) => {
+test('toTree: SEQUENCE with tagged primitives', (t) => {
   const mapped = {
     foo: Buffer.from([ 1, 2, 3 ]),
     bar: Buffer.from([ 2, 3, 4 ]),
@@ -515,6 +587,27 @@ test('fromTree: universal constructed: tagged primitives', (t) => {
       tagCode: 2,
       value: Buffer.from([ 4, 5, 6 ])
     }]
+  };
+
+  t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
+});
+
+test('toTree: CHOICE where second choice matches', (t) => {
+  const mapped = asn1Mapper.tag(Buffer.from([ 1, 2, 3 ]), 'OCTET STRING');
+
+  const definition = {
+    type: 'CHOICE',
+    elements: [{
+      type: 'INTEGER',
+    }, {
+      type: 'OCTET STRING'
+    }]
+  };
+  const tree = {
+    cls: CLS_UNIVERSAL,
+    form: FORM_PRIMITIVE,
+    tagCode: TAG_OCTET_STRING,
+    value: Buffer.from([ 1, 2, 3 ])
   };
 
   t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
