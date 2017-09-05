@@ -191,6 +191,57 @@ test('toTree: universal primitive', (t) => {
   t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
 });
 
+test('toTree: primitive encoding: INTEGER', (t) => {
+  const mapped = 0x1234;
+  const definition = {
+    type: 'INTEGER'
+  };
+  const tree = {
+    cls: CLS_UNIVERSAL,
+    form: FORM_PRIMITIVE,
+    tagCode: TAG_INTEGER,
+    value: Buffer.from([ 0x12, 0x34 ])
+  };
+
+  t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
+});
+
+test('toTree: primitive encoding: NULL', (t) => {
+  const mapped = true;
+  const definition = {
+    type: 'NULL'
+  };
+  const tree = {
+    cls: CLS_UNIVERSAL,
+    form: FORM_PRIMITIVE,
+    tagCode: TAG_NULL,
+    value: Buffer.from([])
+  };
+
+  // @todo deepEqual causes an offset error
+  // t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
+  t.is(JSON.stringify(asn1Mapper.toTree(mapped, definition)), JSON.stringify(tree));
+});
+
+test('toTree: primitive encoding: ENUMERATED', (t) => {
+  const mapped = 'two';
+  const definition = {
+    type: 'ENUMERATED',
+    values: [
+      { name: 'one', value: 1 },
+      { name: 'two', value: 2 }
+    ]
+  };
+  const tree = {
+    cls: CLS_UNIVERSAL,
+    form: FORM_PRIMITIVE,
+    tagCode: TAG_ENUMERATED,
+    value: Buffer.from([ 2 ])
+  };
+
+  t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
+});
+
 test('toTree: context-specific primitive', (t) => {
   const mapped = Buffer.from([ 1, 2, 3 ]);
   const definition = {
