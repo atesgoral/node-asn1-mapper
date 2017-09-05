@@ -748,3 +748,19 @@ test('toTree: CHOICE where no choices matche', (t) => {
     asn1Mapper.toTree(mapped, definition);
   });
 });
+
+test('tag: string tag', (t) => {
+  const buffer = Buffer.from([ 1, 2, 3 ]);
+  const tagged = asn1Mapper.tag(buffer, 'OCTET STRING');
+
+  t.is(tagged.buffer, buffer);
+  t.is(tagged.tag, TAG_OCTET_STRING);
+});
+
+test('tag: numeric tag', (t) => {
+  const buffer = Buffer.from([ 1, 2, 3 ]);
+  const tagged = asn1Mapper.tag(buffer, TAG_INTEGER);
+
+  t.is(tagged.buffer, buffer);
+  t.is(tagged.tag, TAG_INTEGER);
+});
