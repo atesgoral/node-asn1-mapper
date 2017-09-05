@@ -176,7 +176,7 @@ test('fromTree: SEQUENCE with single primitive', (t) => {
     type: 'SEQUENCE',
     elements: [{
       name: 'foo',
-      type: 'OCTET STRING',
+      type: 'OCTET STRING'
     }]
   };
   const mapped = {
@@ -212,7 +212,7 @@ test('fromTree: SEQUENCE with tagged primitives', (t) => {
     type: 'SEQUENCE',
     elements: [{
       name: 'foo',
-      type: 'OCTET STRING',
+      type: 'OCTET STRING'
     }, {
       name: 'bar',
       type: 'OCTET STRING',
@@ -263,7 +263,7 @@ test('fromTree: SEQUENCE with unmatched optional element', (t) => {
     type: 'SEQUENCE',
     elements: [{
       name: 'foo',
-      type: 'OCTET STRING',
+      type: 'OCTET STRING'
     }, {
       name: 'bar',
       type: 'OCTET STRING',
@@ -302,7 +302,7 @@ test('fromTree: SEQUENCE with unmatched mandatory element', (t) => {
     type: 'SEQUENCE',
     elements: [{
       name: 'foo',
-      type: 'OCTET STRING',
+      type: 'OCTET STRING'
     }, {
       name: 'bar',
       type: 'OCTET STRING'
@@ -334,7 +334,7 @@ test('fromTree: SEQUENCE OF', (t) => {
   const definition = {
     type: 'SEQUENCE',
     ofElement: {
-      type: 'OCTET STRING',
+      type: 'OCTET STRING'
     }
   };
   const mapped = [
@@ -365,7 +365,7 @@ test('fromTree: SEQUENCE OF with unmatched element', (t) => {
   const definition = {
     type: 'SEQUENCE',
     ofElement: {
-      type: 'OCTET STRING',
+      type: 'OCTET STRING'
     }
   };
 
@@ -384,7 +384,7 @@ test('fromTree: CHOICE where second choice matches', (t) => {
   const definition = {
     type: 'CHOICE',
     elements: [{
-      type: 'INTEGER',
+      type: 'INTEGER'
     }, {
       type: 'OCTET STRING'
     }]
@@ -404,7 +404,7 @@ test('fromTree: CHOICE where no choices match', (t) => {
   const definition = {
     type: 'CHOICE',
     elements: [{
-      type: 'INTEGER',
+      type: 'INTEGER'
     }, {
       type: 'OCTET STRING'
     }]
@@ -518,13 +518,40 @@ test('toTree: SEQUENCE with single primitive', (t) => {
     type: 'SEQUENCE',
     elements: [{
       name: 'foo',
-      type: 'OCTET STRING',
+      type: 'OCTET STRING'
     }]
   };
   const tree = {
     cls: CLS_UNIVERSAL,
     form: FORM_CONSTRUCTED,
     tagCode: TAG_SEQUENCE,
+    elements: [{
+      cls: CLS_UNIVERSAL,
+      form: FORM_PRIMITIVE,
+      tagCode: TAG_OCTET_STRING,
+      value: Buffer.from([ 1, 2, 3 ])
+    }]
+  };
+
+  t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
+});
+
+test('toTree: context-specific SEQUENCE with a single primitive', (t) => {
+  const mapped = {
+    foo: Buffer.from([ 1, 2, 3 ])
+  };
+  const definition = {
+    type: 'SEQUENCE',
+    tag: 100,
+    elements: [{
+      name: 'foo',
+      type: 'OCTET STRING'
+    }]
+  };
+  const tree = {
+    cls: CLS_CONTEXT_SPECIFIC,
+    form: FORM_CONSTRUCTED,
+    tagCode: 100,
     elements: [{
       cls: CLS_UNIVERSAL,
       form: FORM_PRIMITIVE,
@@ -592,13 +619,105 @@ test('toTree: SEQUENCE with tagged primitives', (t) => {
   t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
 });
 
+test('toTree: SEQUENCE where value is not an object', (t) => {
+  const mapped = Buffer.from([ 1, 2, 3 ]);
+  const definition = {
+    type: 'SEQUENCE',
+    elements: [{
+      name: 'foo',
+      type: 'OCTET STRING',
+    }]
+  };
+
+  t.throws(() => {
+    asn1Mapper.toTree(mapped, definition);
+  });
+});
+
+test('toTree: SEQUENCE OF', (t) => {
+  const mapped = [
+    Buffer.from([ 1, 2, 3 ]),
+    Buffer.from([ 4, 5, 6 ])
+  ];
+  const definition = {
+    type: 'SEQUENCE',
+    ofElement: {
+      type: 'OCTET STRING'
+    }
+  };
+  const tree = {
+    cls: CLS_UNIVERSAL,
+    form: FORM_CONSTRUCTED,
+    tagCode: TAG_SEQUENCE,
+    elements: [{
+      cls: CLS_UNIVERSAL,
+      form: FORM_PRIMITIVE,
+      tagCode: TAG_OCTET_STRING,
+      value: Buffer.from([ 1, 2, 3 ])
+    }, {
+      cls: CLS_UNIVERSAL,
+      form: FORM_PRIMITIVE,
+      tagCode: TAG_OCTET_STRING,
+      value: Buffer.from([ 4, 5, 6 ])
+    }]
+  };
+
+  t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
+});
+
+test('toTree: context-specific SEQUENCE OF', (t) => {
+  const mapped = [
+    Buffer.from([ 1, 2, 3 ]),
+    Buffer.from([ 4, 5, 6 ])
+  ];
+  const definition = {
+    type: 'SEQUENCE',
+    tag: 100,
+    ofElement: {
+      type: 'OCTET STRING'
+    }
+  };
+  const tree = {
+    cls: CLS_CONTEXT_SPECIFIC,
+    form: FORM_CONSTRUCTED,
+    tagCode: 100,
+    elements: [{
+      cls: CLS_UNIVERSAL,
+      form: FORM_PRIMITIVE,
+      tagCode: TAG_OCTET_STRING,
+      value: Buffer.from([ 1, 2, 3 ])
+    }, {
+      cls: CLS_UNIVERSAL,
+      form: FORM_PRIMITIVE,
+      tagCode: TAG_OCTET_STRING,
+      value: Buffer.from([ 4, 5, 6 ])
+    }]
+  };
+
+  t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
+});
+
+test('toTree: SEQUENCE OF where value is not an array', (t) => {
+  const mapped = Buffer.from([ 1, 2, 3 ]);
+  const definition = {
+    type: 'SEQUENCE',
+    ofElement: {
+      type: 'OCTET STRING'
+    }
+  };
+
+  t.throws(() => {
+    asn1Mapper.toTree(mapped, definition);
+  });
+});
+
 test('toTree: CHOICE where second choice matches', (t) => {
   const mapped = asn1Mapper.tag(Buffer.from([ 1, 2, 3 ]), 'OCTET STRING');
 
   const definition = {
     type: 'CHOICE',
     elements: [{
-      type: 'INTEGER',
+      type: 'INTEGER'
     }, {
       type: 'OCTET STRING'
     }]
@@ -611,4 +730,21 @@ test('toTree: CHOICE where second choice matches', (t) => {
   };
 
   t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
+});
+
+test('toTree: CHOICE where no choices matche', (t) => {
+  const mapped = asn1Mapper.tag(Buffer.from([ 1, 2, 3 ]), 'OCTET STRING');
+
+  const definition = {
+    type: 'CHOICE',
+    elements: [{
+      type: 'INTEGER'
+    }, {
+      type: 'NULL'
+    }]
+  };
+
+  t.throws(() => {
+    asn1Mapper.toTree(mapped, definition);
+  });
 });

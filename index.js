@@ -209,7 +209,7 @@ function toTree(value, definition) { // @todo optional third arg: throw exceptio
         elements: value.map((item) => toTree(item, ofElement)) // @todo throw exception if any items are null
       };
     } else {
-      if (!(value instanceof Object)) {
+      if (value.constructor.name !== 'Object') {
         throw new Error('Value must be an object');
       }
       return {
