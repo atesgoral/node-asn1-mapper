@@ -94,6 +94,25 @@ test('fromFree: primitive decoding: ENUMERATED', (t) => {
   t.is(asn1Mapper.fromTree(tree, definition), mapped);
 });
 
+test('fromFree: primitive decoding: ENUMERATED with unmatched value', (t) => {
+  const tree = {
+    cls: CLS_UNIVERSAL,
+    form: FORM_PRIMITIVE,
+    tagCode: TAG_ENUMERATED,
+    value: Buffer.from([ 3 ])
+  };
+  const definition = {
+    type: 'ENUMERATED',
+    values: [
+      { name: 'one', value: 1 },
+      { name: 'two', value: 2 }
+    ]
+  };
+  const mapped = 3;
+
+  t.is(asn1Mapper.fromTree(tree, definition), mapped);
+});
+
 test('fromTree: universal constructed: single primitive', (t) => {
   const tree = {
     cls: CLS_UNIVERSAL,
@@ -221,6 +240,21 @@ test('toTree: primitive encoding: NULL', (t) => {
   // @todo deepEqual causes an offset error
   // t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
   t.is(JSON.stringify(asn1Mapper.toTree(mapped, definition)), JSON.stringify(tree));
+});
+
+test('toTree: primitive encoding: NULL with non-truthy value', (t) => {
+  const mapped = false;
+  const definition = {
+    type: 'NULL'
+  };
+  const tree = {
+    cls: CLS_UNIVERSAL,
+    form: FORM_PRIMITIVE,
+    tagCode: TAG_NULL,
+    value: null
+  };
+
+  t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
 });
 
 test('toTree: primitive encoding: ENUMERATED', (t) => {
