@@ -77,8 +77,6 @@ const encoders = {
 }
 
 function fromTree(element, definition) {
-  // if (definition.name == 'provisionedSS') debugger;
-
   let match = null;
 
   if (definition.type === 'CHOICE') {
