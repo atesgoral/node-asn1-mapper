@@ -76,15 +76,6 @@ const encoders = {
   }
 }
 
-class TaggedBuffer {
-  constructor(buffer, tag) {
-    this.buffer = buffer;
-    this.tag = typeof tag === 'string'
-      ? universalTagMap[tag]
-      : tag;
-  }
-}
-
 function fromTree(element, definition) {
   // if (definition.name == 'provisionedSS') debugger;
 
@@ -224,33 +215,18 @@ function toTree(value, definition) { // @todo optional third arg: throw exceptio
       };
     }
   } else {
-    let buffer = value;
-
-    if (value instanceof TaggedBuffer) {
-      if (value.tag !== definitionTag) {
-        return null;
-      }
-
-      buffer = value.buffer;
-    }
-
     const encoder = encoders[definition.type];
 
     return {
       cls: isDefinitionUniversal ? CLS_UNIVERSAL : CLS_CONTEXT_SPECIFIC,
       form: FORM_PRIMITIVE,
       tagCode: definitionTag,
-      value: encoder ? encoder(buffer, definition) : buffer
+      value: encoder ? encoder(value, definition) : value
     };
   }
 }
 
-function tag(buffer, tag) {
-  return new TaggedBuffer(buffer, tag);
-}
-
 module.exports = Object.freeze({
   fromTree,
-  toTree,
-  tag
+  toTree
 });
