@@ -86,16 +86,20 @@ class TaggedBuffer {
 }
 
 function fromTree(element, definition) {
+  // if (definition.name == 'provisionedSS') debugger;
+
   let match = null;
 
   if (definition.type === 'CHOICE') {
     let choices = definition.elements; // @todo rename to choices
+    let choice = null;
 
     for (let choiceIdx = 0; choiceIdx < choices.length; choiceIdx++) {
-      match = fromTree(element, choices[choiceIdx]);
+      choice = choices[choiceIdx];
+      match = fromTree(element, choice); // This is like a SEQUENCE where all items are optional; could reuse loop below
 
       if (match !== null) {
-        return match;
+        return { [choice.name]: match };
       }
     }
 
@@ -174,15 +178,11 @@ function fromTree(element, definition) {
 
 function toTree(value, definition) { // @todo optional third arg: throw exception on no match instead of returning null?
   if (definition.type === 'CHOICE') {
-    let choices = definition.elements; // @todo rename to choices
-    let element = null;
+    // @todo rename elements to choices
+    let choice = definition.elements.find((choice) => value.hasOwnProperty(choice.name));
 
-    for (let choiceIdx = 0; choiceIdx < choices.length; choiceIdx++) {
-      element = toTree(value, choices[choiceIdx]);
-
-      if (element !== null) {
-        return element;
-      }
+    if (choice) {
+      return toTree(value[choice.name], choice);
     }
 
     throw new Error('Choice not matched');

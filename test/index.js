@@ -384,12 +384,16 @@ test('fromTree: CHOICE where second choice matches', (t) => {
   const definition = {
     type: 'CHOICE',
     elements: [{
+      name: 'foo',
       type: 'INTEGER'
     }, {
+      name: 'bar',
       type: 'OCTET STRING'
     }]
   };
-  const mapped = Buffer.from([ 1, 2, 3 ]);
+  const mapped = {
+    bar: Buffer.from([ 1, 2, 3 ])
+  };
 
   t.deepEqual(asn1Mapper.fromTree(tree, definition), mapped);
 });
@@ -404,8 +408,10 @@ test('fromTree: CHOICE where no choices match', (t) => {
   const definition = {
     type: 'CHOICE',
     elements: [{
+      name: 'foo',
       type: 'INTEGER'
     }, {
+      name: 'bar',
       type: 'OCTET STRING'
     }]
   };
@@ -712,13 +718,17 @@ test('toTree: SEQUENCE OF where value is not an array', (t) => {
 });
 
 test('toTree: CHOICE where second choice matches', (t) => {
-  const mapped = asn1Mapper.tag(Buffer.from([ 1, 2, 3 ]), 'OCTET STRING');
+  const mapped = {
+    bar: Buffer.from([ 1, 2, 3 ])
+  };
 
   const definition = {
     type: 'CHOICE',
     elements: [{
+      name: 'foo',
       type: 'INTEGER'
     }, {
+      name: 'bar',
       type: 'OCTET STRING'
     }]
   };
@@ -733,13 +743,17 @@ test('toTree: CHOICE where second choice matches', (t) => {
 });
 
 test('toTree: CHOICE where no choices matche', (t) => {
-  const mapped = asn1Mapper.tag(Buffer.from([ 1, 2, 3 ]), 'OCTET STRING');
+  const mapped = {
+    baz: Buffer.from([ 1, 2, 3 ])
+  };
 
   const definition = {
     type: 'CHOICE',
     elements: [{
+      name: 'foo',
       type: 'INTEGER'
     }, {
+      name: 'bar',
       type: 'NULL'
     }]
   };
