@@ -742,7 +742,7 @@ test('toTree: CHOICE where second choice matches', (t) => {
   t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
 });
 
-test('toTree: CHOICE where no choices matche', (t) => {
+test('toTree: CHOICE where no choices match', (t) => {
   const mapped = {
     baz: Buffer.from([ 1, 2, 3 ])
   };
