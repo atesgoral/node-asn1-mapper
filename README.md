@@ -42,3 +42,27 @@ The value of `mapped` will be:
   requestingNodeType: 'sgsn'
 }
 ```
+
+Going back:
+
+```
+const tree = asn1Mapper.toTree(mapped, operations.sendAuthenticationInfo.argument);
+const buffer = asn1Tree.encode(tree);
+```
+
+## Notes
+
+### The NULL type
+
+Elements of NULL type are treated as Boolean flags. Just the presence of a NULL element (since its value is zero-sized) will result in a property set to `true`. For example, with the immediateResponsePreferred element of a sendAuthenticationInfo argument, you might end up with:
+
+```
+{
+  imsi: Buffer.from('03221200644241f4', 'hex'),
+  immediateResponsePreferred: true,
+  numberOfRequestedVectors: 2,
+  requestingNodeType: 'sgsn'
+}
+```
+
+Going back, all you have to do is to include a property that is set to `true` and it will end up as a NULL element.
