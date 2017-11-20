@@ -461,9 +461,7 @@ test('toTree: encoding NULL', (t) => {
     value: Buffer.from([])
   };
 
-  // @todo deepEqual causes an offset error
-  // t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
-  t.is(JSON.stringify(asn1Mapper.toTree(mapped, definition)), JSON.stringify(tree));
+  t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
 });
 
 test('toTree: encoding NULL with non-truthy value', (t) => {
