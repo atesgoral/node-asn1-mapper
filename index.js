@@ -78,8 +78,9 @@ const encoders = {
 
 function fromTree(element, definition) {
   let match = null;
+  const isDefinitionUniversal = isNaN(definition.tag);
 
-  if (definition.type === 'CHOICE') {
+  if (definition.type === 'CHOICE' && isDefinitionUniversal) {
     let choices = definition.elements; // @todo rename to choices
     let choice = null;
 
@@ -95,7 +96,6 @@ function fromTree(element, definition) {
     return null;
   }
 
-  const isDefinitionUniversal = isNaN(definition.tag);
   const definitionTag = isDefinitionUniversal
     ? universalTagMap[definition.type]
     : definition.tag;
