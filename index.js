@@ -146,12 +146,16 @@ function fromTree(element, definition) {
             childDefinition = definitions[definitionIdx++];
             match = fromTree(child, childDefinition);
 
-            if (match === null && !childDefinition.optional) {
+            if (match === null && !childDefinition.optional && definition.type !== 'CHOICE') {
               throw new Error('Unmatched mandatory element');
             }
           }
 
-          constructed[childDefinition.name] = match;
+          if (match !== null) {
+            constructed[childDefinition.name] = match;
+          } else {
+            throw new Error('No definitions found for element.');
+          }
         });
 
       match = constructed;
