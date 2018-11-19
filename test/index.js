@@ -430,6 +430,38 @@ test('fromTree: CHOICE where element is CLS_CONTEXT_SPECIFIC and first choice ma
   t.deepEqual(asn1Mapper.fromTree(tree, definition), mapped);
 });
 
+test('fromTree: CHOICE where element is CLS_CONTEXT_SPECIFIC and second choice matches', (t) => {
+  const tree = {
+    cls: CLS_CONTEXT_SPECIFIC,
+    form: FORM_CONSTRUCTED,
+    tagCode: 3,
+    elements: [{
+      cls: CLS_CONTEXT_SPECIFIC,
+      form: FORM_PRIMITIVE,
+      tagCode: 1,
+      value: Buffer.from([1, 2, 3])
+    }]
+  };
+  const definition = {
+    type: 'CHOICE',
+    tag: 3,
+    elements: [{
+      name: 'foo',
+      tag: 0,
+      type: 'NULL'
+    }, {
+      name: 'bar',
+      tag: 1,
+      type: 'OCTET STRING'
+    }]
+  };
+  const mapped = {
+    bar: Buffer.from([1, 2, 3])
+  };
+
+  t.deepEqual(asn1Mapper.fromTree(tree, definition), mapped);
+});
+
 test('fromTree: CHOICE where no choices match', (t) => {
   const tree = {
     cls: CLS_UNIVERSAL,
@@ -791,4 +823,70 @@ test('toTree: CHOICE where no choices match', (t) => {
   t.throws(() => {
     asn1Mapper.toTree(mapped, definition);
   });
+});
+
+test('toTree: CHOICE element with tag where first choice matches', (t) => {
+  const mapped = {
+      foo: 71
+  };
+
+  const definition = {
+    name: 'test',
+    type: 'CHOICE',
+    tag: 18,
+    elements: [{
+      name: 'foo',
+      type: 'INTEGER'
+    }, {
+      name: 'bar',
+      type: 'OCTET STRING'
+    }]
+  };
+
+  const tree = {
+    cls: CLS_CONTEXT_SPECIFIC,
+    form: FORM_CONSTRUCTED,
+    tagCode: 18,
+    elements: [{
+      cls: CLS_UNIVERSAL,
+      form: FORM_PRIMITIVE,
+      tagCode: TAG_INTEGER,
+      value: Buffer.from([71])
+    }]
+  };
+
+  t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
+});
+
+test('toTree: CHOICE element with tag where second choice matches', (t) => {
+  const mapped = {
+      bar: Buffer.from([ 1, 2, 3 ])
+  };
+
+  const definition = {
+    name: 'test',
+    type: 'CHOICE',
+    tag: 18,
+    elements: [{
+      name: 'foo',
+      type: 'INTEGER'
+    }, {
+      name: 'bar',
+      type: 'OCTET STRING'
+    }]
+  };
+
+  const tree = {
+    cls: CLS_CONTEXT_SPECIFIC,
+    form: FORM_CONSTRUCTED,
+    tagCode: 18,
+    elements: [{
+      cls: CLS_UNIVERSAL,
+      form: FORM_PRIMITIVE,
+      tagCode: TAG_OCTET_STRING,
+      value: Buffer.from([ 1, 2, 3 ])
+    }]
+  };
+
+  t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
 });

@@ -175,7 +175,12 @@ function toTree(value, definition) { // @todo optional third arg: throw exceptio
     let choice = definition.elements.find((choice) => value.hasOwnProperty(choice.name));
 
     if (choice) {
-      return toTree(value[choice.name], choice);
+      return definition.tag ? {
+        cls: CLS_CONTEXT_SPECIFIC,
+        form: FORM_CONSTRUCTED,
+        tagCode: definition.tag,
+        elements: new Array(toTree(value[choice.name], choice))
+      } : toTree(value[choice.name], choice);
     }
 
     throw new Error('Choice not matched');
