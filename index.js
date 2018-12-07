@@ -50,6 +50,17 @@ const constructedTypeMap = {
   'CHOICE': 1
 };
 
+const qualifiers = {
+  'INTEGER': (value, range) => {
+    const match = /\(([\d]+)\.\.([\d]+)\)/g.exec(range);
+    return match ? value >= match[1] && value <= match[2] : true;
+  },
+  'OCTET STRING': (length, range) => {
+    const match = /^\(SIZE\(([\d]+)[\.\.]*([\d]+)*\)\)/g.exec(range);
+    return match ? match[2] ? length >= match[1] && length <= match[2] : length == match[1] : true;
+  },
+};
+
 const decoders = {
   'INTEGER': (value) => {
     return value.readIntBE(0, value.length);
@@ -63,12 +74,23 @@ const decoders = {
 };
 
 const encoders = {
-  'INTEGER': (value) => {
+  'INTEGER': (value, definition) => {
+    if (definition.qualifiers && !qualifiers['INTEGER'](value, definition.qualifiers)) {
+      throw new Error('OUT_OF_RANGE_VALUE');
+    }
+
     let length = (Math.log2(value) >> 3) + 1;
     length += value >> ((length * 8) - 1);
     const buffer = Buffer.allocUnsafe(length);
     buffer.writeUIntBE(value, 0, length);
     return buffer;
+  },
+  'OCTET STRING': (value, definition) => {
+    if (definition.qualifiers && !qualifiers['OCTET STRING'](value.length, definition.qualifiers)) {
+      throw new Error('OUT_OF_RANGE_VALUE');
+    }
+
+    return value;
   },
   'NULL': (value) => value ? Buffer.from([]) : null,
   'ENUMERATED': (value, definition) => {

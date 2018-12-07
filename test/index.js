@@ -513,6 +513,44 @@ test('toTree: universal primitive', (t) => {
   t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
 });
 
+test('toTree: encoding qualified OCTET STRING', (t) => {
+  const mapped = Buffer.from([ 1, 2, 3 ]);
+  const definition = {
+    type: 'OCTET STRING',
+    qualifiers: '(SIZE(3))'
+  };
+  const tree = {
+    cls: CLS_UNIVERSAL,
+    form: FORM_PRIMITIVE,
+    tagCode: TAG_OCTET_STRING,
+    value: Buffer.from([ 1, 2, 3 ])
+  };
+
+  t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
+});
+
+test('toTree: encoding unqualified OCTET STRING', (t) => {
+  const mapped = Buffer.from([ 1, 2, 3 ]);
+  const definition = {
+    type: 'OCTET STRING',
+    qualifiers: '(SIZE(5))'
+  };
+
+  const error = t.throws(() => asn1Mapper.toTree(mapped, definition));
+  t.is(error.message, 'OUT_OF_RANGE_VALUE');
+});
+
+test('toTree: encoding unqualified range of OCTET STRING', (t) => {
+  const mapped = Buffer.from([ 1, 2, 3 ]);
+  const definition = {
+    type: 'OCTET STRING',
+    qualifiers: '(SIZE(4..8))'
+  };
+
+  const error = t.throws(() => asn1Mapper.toTree(mapped, definition));
+  t.is(error.message, 'OUT_OF_RANGE_VALUE');
+});
+
 test('toTree: encoding INTEGER', (t) => {
   const mapped = 0x1234;
   const definition = {
@@ -541,6 +579,33 @@ test('toTree: encoding unsigned INTEGER', (t) => {
   };
 
   t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
+});
+
+test('toTree: encoding INTEGER with qualifier', (t) => {
+  const mapped = 0x92;
+  const definition = {
+    type: 'INTEGER',
+    qualifiers: '(1..255)'
+  };
+  const tree = {
+    cls: CLS_UNIVERSAL,
+    form: FORM_PRIMITIVE,
+    tagCode: TAG_INTEGER,
+    value: Buffer.from([ 0x0, 0x92 ])
+  };
+
+  t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
+});
+
+test('toTree: encoding unqualified INTEGER velue', (t) => {
+  const mapped = 0x0;
+  const definition = {
+    type: 'INTEGER',
+    qualifiers: '(1..255)'
+  };
+
+  const error = t.throws(() => asn1Mapper.toTree(mapped, definition));
+  t.is(error.message, 'OUT_OF_RANGE_VALUE');
 });
 
 test('toTree: encoding NULL', (t) => {
