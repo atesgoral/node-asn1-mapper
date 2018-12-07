@@ -107,6 +107,21 @@ test('fromFree: decoding INTEGER', (t) => {
   t.is(asn1Mapper.fromTree(tree, definition), mapped);
 });
 
+test('fromFree: decoding INTEGER (unsigned decoding)', (t) => {
+  const tree = {
+    cls: CLS_UNIVERSAL,
+    form: FORM_PRIMITIVE,
+    tagCode: TAG_INTEGER,
+    value: Buffer.from([ 0x0, 0x92, 0x34 ])
+  };
+  const definition = {
+    type: 'INTEGER'
+  };
+  const mapped = 0x9234;
+
+  t.is(asn1Mapper.fromTree(tree, definition), mapped);
+});
+
 test('fromFree: decoding NULL', (t) => {
   const tree = {
     cls: CLS_UNIVERSAL,
@@ -508,6 +523,21 @@ test('toTree: encoding INTEGER', (t) => {
     form: FORM_PRIMITIVE,
     tagCode: TAG_INTEGER,
     value: Buffer.from([ 0x12, 0x34 ])
+  };
+
+  t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
+});
+
+test('toTree: encoding unsigned INTEGER', (t) => {
+  const mapped = 0x9234;
+  const definition = {
+    type: 'INTEGER'
+  };
+  const tree = {
+    cls: CLS_UNIVERSAL,
+    form: FORM_PRIMITIVE,
+    tagCode: TAG_INTEGER,
+    value: Buffer.from([ 0x0, 0x92, 0x34 ])
   };
 
   t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);

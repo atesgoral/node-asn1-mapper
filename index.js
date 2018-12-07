@@ -64,7 +64,8 @@ const decoders = {
 
 const encoders = {
   'INTEGER': (value) => {
-    const length = (Math.log2(value) >> 3) + 1;
+    let length = (Math.log2(value) >> 3) + 1;
+    length += value >> ((length * 8) - 1);
     const buffer = Buffer.allocUnsafe(length);
     buffer.writeUIntBE(value, 0, length);
     return buffer;
