@@ -146,12 +146,16 @@ function fromTree(element, definition) {
             childDefinition = definitions[definitionIdx++];
             match = fromTree(child, childDefinition);
 
-            if (match === null && !childDefinition.optional) {
+            if (match === null && !childDefinition.optional && definition.type !== 'CHOICE') {
               throw new Error('Unmatched mandatory element');
             }
           }
 
-          constructed[childDefinition.name] = match;
+          if (match !== null) {
+            constructed[childDefinition.name] = match;
+          } else {
+            throw new Error('No definitions found for element.');
+          }
         });
 
       match = constructed;
@@ -171,7 +175,12 @@ function toTree(value, definition) { // @todo optional third arg: throw exceptio
     let choice = definition.elements.find((choice) => value.hasOwnProperty(choice.name));
 
     if (choice) {
-      return toTree(value[choice.name], choice);
+      return definition.tag ? {
+        cls: CLS_CONTEXT_SPECIFIC,
+        form: FORM_CONSTRUCTED,
+        tagCode: definition.tag,
+        elements: new Array(toTree(value[choice.name], choice))
+      } : toTree(value[choice.name], choice);
     }
 
     throw new Error('Choice not matched');
