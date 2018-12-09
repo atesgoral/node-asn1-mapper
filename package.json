@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/atesgoral/node-asn1-mapper#readme",
   "devDependencies": {
-    "ava": "1.0.0-beta.4",
+    "ava": "^0.25.0",
     "coveralls": "^2.13.1",
     "nyc": "^11.1.0"
   }
