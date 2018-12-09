@@ -477,6 +477,36 @@ test('fromTree: CHOICE where element is CLS_CONTEXT_SPECIFIC and second choice m
   t.deepEqual(asn1Mapper.fromTree(tree, definition), mapped);
 });
 
+test('fromTree: CHOICE where element is CLS_CONTEXT_SPECIFIC and no choice matches', (t) => {
+  const tree = {
+    cls: CLS_CONTEXT_SPECIFIC,
+    form: FORM_CONSTRUCTED,
+    tagCode: 3,
+    elements: [{
+      cls: CLS_CONTEXT_SPECIFIC,
+      form: FORM_PRIMITIVE,
+      tagCode: 2,
+      value: Buffer.from([1, 2, 3])
+    }]
+  };
+  const definition = {
+    type: 'CHOICE',
+    tag: 3,
+    elements: [{
+      name: 'foo',
+      tag: 0,
+      type: 'NULL'
+    }, {
+      name: 'bar',
+      tag: 1,
+      type: 'OCTET STRING'
+    }]
+  };
+
+  const error = t.throws(() => asn1Mapper.fromTree(tree, definition));
+  t.is(error.message, 'No definitions found for element.');
+});
+
 test('fromTree: CHOICE where no choices match', (t) => {
   const tree = {
     cls: CLS_UNIVERSAL,
