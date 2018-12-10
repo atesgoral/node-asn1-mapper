@@ -597,6 +597,23 @@ test('toTree: encoding unqualified range of OCTET STRING', (t) => {
   t.is(error.message, 'OUT_OF_RANGE_VALUE');
 });
 
+test('toTree: encoding OCTET STRING with qualified length', (t) => {
+  const mapped = Buffer.from([ 1, 2, 3, 4, 5 ]);
+  const definition = {
+    type: 'OCTET STRING',
+    qualifiers: '(SIZE(4..8))'
+  };
+
+  const tree = {
+    cls: CLS_UNIVERSAL,
+    form: FORM_PRIMITIVE,
+    tagCode: TAG_OCTET_STRING,
+    value: Buffer.from([ 1, 2, 3, 4, 5 ])
+  };
+
+  t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
+});
+
 test('toTree: encoding INTEGER', (t) => {
   const mapped = 0x1234;
   const definition = {
