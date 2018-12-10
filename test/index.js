@@ -13,6 +13,7 @@ const TAG_OCTET_STRING = 4;
 const TAG_NULL = 5;
 const TAG_ENUMERATED = 10;
 const TAG_SEQUENCE = 16;
+const TAG_IA5STRING = 22;
 
 test('fromTree: class mismatch', (t) => {
   const tree = {
@@ -103,6 +104,21 @@ test('fromFree: decoding INTEGER', (t) => {
     type: 'INTEGER'
   };
   const mapped = 0x1234;
+
+  t.is(asn1Mapper.fromTree(tree, definition), mapped);
+});
+
+test('fromFree: decoding INTEGER (unsigned decoding)', (t) => {
+  const tree = {
+    cls: CLS_UNIVERSAL,
+    form: FORM_PRIMITIVE,
+    tagCode: TAG_INTEGER,
+    value: Buffer.from([ 0x0, 0x92, 0x34 ])
+  };
+  const definition = {
+    type: 'INTEGER'
+  };
+  const mapped = 0x9234;
 
   t.is(asn1Mapper.fromTree(tree, definition), mapped);
 });
@@ -528,6 +544,92 @@ test('toTree: universal primitive', (t) => {
   t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
 });
 
+test('toTree: universal string primitive', (t) => {
+  const mapped = Buffer.from([ 1, 2, 3 ]);
+  const definition = {
+    type: 'IA5String'
+  };
+  const tree = {
+    cls: CLS_UNIVERSAL,
+    form: FORM_PRIMITIVE,
+    tagCode: TAG_IA5STRING,
+    value: Buffer.from([ 1, 2, 3 ])
+  };
+
+  t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
+});
+
+test('toTree: encoding qualified OCTET STRING', (t) => {
+  const mapped = Buffer.from([ 1, 2, 3 ]);
+  const definition = {
+    type: 'OCTET STRING',
+    qualifiers: '(SIZE(3))'
+  };
+  const tree = {
+    cls: CLS_UNIVERSAL,
+    form: FORM_PRIMITIVE,
+    tagCode: TAG_OCTET_STRING,
+    value: Buffer.from([ 1, 2, 3 ])
+  };
+
+  t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
+});
+
+test('toTree: encoding OCTET STRING while qualifier is invalid', (t) => {
+  const mapped = Buffer.from([ 1, 2, 3 ]);
+  const definition = {
+    type: 'OCTET STRING',
+    qualifiers: '(SIZE(-3))'
+  };
+  const tree = {
+    cls: CLS_UNIVERSAL,
+    form: FORM_PRIMITIVE,
+    tagCode: TAG_OCTET_STRING,
+    value: Buffer.from([ 1, 2, 3 ])
+  };
+
+  t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
+});
+
+test('toTree: encoding unqualified OCTET STRING', (t) => {
+  const mapped = Buffer.from([ 1, 2, 3 ]);
+  const definition = {
+    type: 'OCTET STRING',
+    qualifiers: '(SIZE(5))'
+  };
+
+  const error = t.throws(() => asn1Mapper.toTree(mapped, definition));
+  t.is(error.message, 'OUT_OF_RANGE_VALUE');
+});
+
+test('toTree: encoding unqualified range of OCTET STRING', (t) => {
+  const mapped = Buffer.from([ 1, 2, 3 ]);
+  const definition = {
+    type: 'OCTET STRING',
+    qualifiers: '(SIZE(4..8))'
+  };
+
+  const error = t.throws(() => asn1Mapper.toTree(mapped, definition));
+  t.is(error.message, 'OUT_OF_RANGE_VALUE');
+});
+
+test('toTree: encoding OCTET STRING with qualified length', (t) => {
+  const mapped = Buffer.from([ 1, 2, 3, 4, 5 ]);
+  const definition = {
+    type: 'OCTET STRING',
+    qualifiers: '(SIZE(4..8))'
+  };
+
+  const tree = {
+    cls: CLS_UNIVERSAL,
+    form: FORM_PRIMITIVE,
+    tagCode: TAG_OCTET_STRING,
+    value: Buffer.from([ 1, 2, 3, 4, 5 ])
+  };
+
+  t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
+});
+
 test('toTree: encoding INTEGER', (t) => {
   const mapped = 0x1234;
   const definition = {
@@ -541,6 +643,64 @@ test('toTree: encoding INTEGER', (t) => {
   };
 
   t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
+});
+
+test('toTree: encoding unsigned INTEGER', (t) => {
+  const mapped = 0x9234;
+  const definition = {
+    type: 'INTEGER'
+  };
+  const tree = {
+    cls: CLS_UNIVERSAL,
+    form: FORM_PRIMITIVE,
+    tagCode: TAG_INTEGER,
+    value: Buffer.from([ 0x0, 0x92, 0x34 ])
+  };
+
+  t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
+});
+
+test('toTree: encoding INTEGER with qualifier', (t) => {
+  const mapped = 0x92;
+  const definition = {
+    type: 'INTEGER',
+    qualifiers: '(1..255)'
+  };
+  const tree = {
+    cls: CLS_UNIVERSAL,
+    form: FORM_PRIMITIVE,
+    tagCode: TAG_INTEGER,
+    value: Buffer.from([ 0x0, 0x92 ])
+  };
+
+  t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
+});
+
+test('toTree: encoding INTEGER with invalid qualifier', (t) => {
+  const mapped = 0x92;
+  const definition = {
+    type: 'INTEGER',
+    qualifiers: '(1..-255)'
+  };
+  const tree = {
+    cls: CLS_UNIVERSAL,
+    form: FORM_PRIMITIVE,
+    tagCode: TAG_INTEGER,
+    value: Buffer.from([ 0x0, 0x92 ])
+  };
+
+  t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
+});
+
+test('toTree: encoding unqualified INTEGER value', (t) => {
+  const mapped = 0x0;
+  const definition = {
+    type: 'INTEGER',
+    qualifiers: '(1..255)'
+  };
+
+  const error = t.throws(() => asn1Mapper.toTree(mapped, definition));
+  t.is(error.message, 'OUT_OF_RANGE_VALUE');
 });
 
 test('toTree: encoding NULL', (t) => {
