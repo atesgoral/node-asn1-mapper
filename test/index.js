@@ -13,6 +13,7 @@ const TAG_OCTET_STRING = 4;
 const TAG_NULL = 5;
 const TAG_ENUMERATED = 10;
 const TAG_SEQUENCE = 16;
+const TAG_IA5STRING = 22;
 
 test('fromTree: class mismatch', (t) => {
   const tree = {
@@ -537,6 +538,21 @@ test('toTree: universal primitive', (t) => {
     cls: CLS_UNIVERSAL,
     form: FORM_PRIMITIVE,
     tagCode: TAG_OCTET_STRING,
+    value: Buffer.from([ 1, 2, 3 ])
+  };
+
+  t.deepEqual(asn1Mapper.toTree(mapped, definition), tree);
+});
+
+test('toTree: universal string primitive', (t) => {
+  const mapped = Buffer.from([ 1, 2, 3 ]);
+  const definition = {
+    type: 'IA5String'
+  };
+  const tree = {
+    cls: CLS_UNIVERSAL,
+    form: FORM_PRIMITIVE,
+    tagCode: TAG_IA5STRING,
     value: Buffer.from([ 1, 2, 3 ])
   };
 
